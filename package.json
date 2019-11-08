@@ -1,7 +1,7 @@
 {
   "name": "lab-08-back-end",
   "version": "1.0.0",
-  "description": "",
+  "description": "**Author**: Your Name Goes Here **Version**: 1.0.0 (increment the patch/fix version number if you make more commits past your first submission)",
   "main": "server.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
@@ -9,19 +9,20 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/KaterynaShydlovska/lab-08-back-end.git"
+    "url": "git+https://github.com/glasscharlie/lab-09--end.git"
   },
   "author": "",
   "license": "ISC",
   "bugs": {
-    "url": "https://github.com/KaterynaShydlovska/lab-08-back-end/issues"
+    "url": "https://github.com/glasscharlie/lab-09--end/issues"
   },
-  "homepage": "https://github.com/KaterynaShydlovska/lab-08-back-end#readme",
+  "homepage": "https://github.com/glasscharlie/lab-09--end#readme",
   "dependencies": {
     "cors": "^2.8.5",
     "dotenv": "^8.2.0",
     "express": "^4.17.1",
     "pg": "^7.12.1",
     "superagent": "^5.1.0"
-  }
+  },
+  "keywords": []
 }
