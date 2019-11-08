@@ -23,6 +23,8 @@ let locations = {};
 app.get('/location', locationHandler);
 app.get('/weather', weatherHandler);
 app.get('/trails', trailsHandler);
+app.get('/movies', moviesHandler);
+app.get('/yelp', yelpHandler);
 app.use('*', notFoundHandler);
 app.use(errorHandler);
 
@@ -33,27 +35,23 @@ function locationHandler(request, response) {
   client.query(SQL, value)
     .then(results => {
       if (results.rowCount) {
-        console.log(results.rowCount);
         response.status(200).json(results.rows[0]);
       } else {
-        const url = `https://maps.googleapis.com/maps/api/geocode/json?address=${request.query.data}&key=${process.env.GEOCODE_API_KEY}`;
+        const url = `https://maps.googleapis.com/maps/api/geocode/json?address=${request.query.data}&key=${process.env.LOCATION_API_KEY}`;
         superagent.get(url)
           .then(data => {
             const geoData = data.body;
             const location = new Location(request.query.data, geoData);
-            // console.log(location);
             locations[url] = location;
             let locationName = location.search_query;
             let formatted_query = location.formatted_query;
             let latitude = location.latitude;
             let longitude = location.longitude;
-            console.log(locationName, latitude, longitude);
             let SQL = `INSERT INTO location (location_name, formatted_query, latitude, longitude ) VALUES ($1, $2, $3, $4) RETURNING *`;
             let safeValues = [locationName, formatted_query, latitude, longitude];
             client.query(SQL, safeValues)
               .then(results => {
                 response.status(200).json(results);
-                // console.log(`added new localion ${results}`);
               })
               .catch(err => console.error(err));
             response.send(location);
@@ -95,12 +93,10 @@ function Weather(day) {
 }
 
 
-// https://www.hikingproject.com/data/get-trails?lat=40.0274&lon=-105.2519&maxDistance=10&key=200632717-2cb4e4ee4b4db951e56453ae07aff93a
 function trailsHandler(request, response) {
   const url = `https://www.hikingproject.com/data/get-trails?lat=${request.query.data.latitude}&lon=${request.query.data.longitude}&maxDistance=10&key=${process.env.TRAIL_API_KEY}`;
   superagent.get(url)
     .then(data => {
-      // console.log(data.body.trails);
       const trailsData = data.body.trails.map(trail => {
         return new Trail(trail);
       });
@@ -125,30 +121,58 @@ function Trail(trails) {
   // this.condition_time = trails.
 }
 
-// app.get('/get', (request, response) => {
-//   let value = [location.formatted_query];
-//   let SQL = `SELECT * FROM location WHERE location_name = $1`;
-//   client.query(SQL, value)
-//     .then(results => {
-//       if (results.rowCount) {
-//         return results.row[0];
-        // response.status(200).json(results.rows);
+function moviesHandler(request, response) {
 
+  let url = `https://api.themoviedb.org/3/search/movie?api_key=${process.env.MOVIES_API_KEY}&query=${request.query.data.location_name}`;
+  console.log(url);
 
-        // console.log(results.rows); 
-      // } else {
-        //go to google
-        // let url = `https://maps.googleapis.com/maps/api/geocode/json?address=${request.query.data}&key=${process.env.GEOCODE_API_KEY}`;
-        // superagent.get(url);
-        // .then(data => {
-        //   let location = new Location(data.body);
-        // })
-//       }
-    
-//     })
-//     .catch(err => console.err(err));
-// })
+  superagent.get(url)
+    .then(data => {
+      const movieSummaries = data.body.results.map(location => {
+        return new Movie(location);
+      });
+      response.status(200).json(movieSummaries);
+    })
+    .catch(() => {
+      errorHandler('So sorry, something went wrong.', request, response);
+    });
 
+}
+
+function Movie(results) {
+  this.title = results.title;
+  this.overview = results.overview;
+  this.averageVotes = results.average_votes;
+  this.totalVotes = results.total_votes;
+  this.image_url = `https://image.tmdb.org/t/p/w500${results.poster_path}`;
+  this.popularity = results.popularity;
+  this.releaseDate = results.released_on;
+}
+
+function yelpHandler(request, response) {
+
+  let url = `https://api.yelp.com/v3/businesses/search?location=${request.query.data.location_name}`;
+
+  superagent.get(url)
+    .set('Authorization', `Bearer ${process.env.YELP_API_KEY}`)
+    .then(data => {
+      const yelpSummaries = data.body.businesses.map(business => {
+        return new Yelp(business);
+      });
+      response.status(200).json(yelpSummaries);
+    })
+    .catch(() => {
+      errorHandler('So sorry, something went wrong.', request, response);
+    });
+}
+
+function Yelp(businesses) {
+  this.name = businesses.name;
+  this.image_url = businesses.image_url;
+  this.price = businesses.price;
+  this.rating = businesses.rating;
+  this.url = businesses.url;
+}
 
 
 function notFoundHandler(request, response) {
